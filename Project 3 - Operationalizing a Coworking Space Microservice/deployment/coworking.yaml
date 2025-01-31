@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coworking
+  labels:
+    name: coworking
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      service: coworking
+  template:
+    metadata:
+      labels:
+        service: coworking
+    spec:
+      containers:
+      - name: coworking
+        image: 486494056512.dkr.ecr.us-east-1.amazonaws.com/coworking:3
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        imagePullPolicy: IfNotPresent
+        livenessProbe:
+          httpGet:
+            path: /health_check
+            port: 5153
+          initialDelaySeconds: 5
+          timeoutSeconds: 2
+        readinessProbe:
+          httpGet:
+            path: "/readiness_check"
+            port: 5153
+          initialDelaySeconds: 5
+          timeoutSeconds: 5
+        envFrom:
+        - configMapRef:
+            name: db-env
+        env:
+        - name: DB_USERNAME
+          valueFrom:
+            configMapKeyRef:
+              name: db-env
+              key: DB_USER
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: db-secret
+              key: DB_PASSWORD
+      restartPolicy: Always
